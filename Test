@@ -1,62 +1,201 @@
-local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+local players = game:GetService("Players")
+local runService = game:GetService("RunService")
+local userInputService = game:GetService("UserInputService")
+local localPlayer = players.LocalPlayer
 
-if playerGui:FindFirstChild("SimpleScriptMenu") then
-    playerGui.SimpleScriptMenu:Destroy()
+-- Purani UI hatao duplicate rokne ke liye
+local playerGui = localPlayer:WaitForChild("PlayerGui")
+if playerGui:FindFirstChild("CustomAdminGui") then
+    playerGui.CustomAdminGui:Destroy()
 end
 
+-- Main ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "SimpleScriptMenu"
+screenGui.Name = "CustomAdminGui"
 screenGui.Parent = playerGui
 
+-- Toggle Button (Screen par chhota button jisse UI khulegi/band hogi)
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0, 100, 0, 40)
+toggleBtn.Position = UDim2.new(0, 20, 0.4, 0)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.Text = "Menu [ . ]"
+toggleBtn.TextSize = 14
+toggleBtn.Font = Enum.Font.SourceSansBold
+toggleBtn.Parent = screenGui
+
+-- Main Control Panel Frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 150)
-frame.Position = UDim2.new(0.1, 0, 0.1, 0)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.Size = UDim2.new(0, 260, 0, 320)
+frame.Position = UDim2.new(0, 130, 0.4, 0)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 frame.BorderSizePixel = 0
 frame.Active = true
 frame.Draggable = true
+frame.Visible = false
 frame.Parent = screenGui
 
+-- Toggle UI Function
+toggleBtn.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
+
+-- Title
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 30)
-title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+title.Size = UDim2.new(1, 0, 0, 35)
+title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Text = "Simple Control Menu"
+title.Text = "Custom Admin Panel (.cmd)"
 title.TextSize = 14
 title.Font = Enum.Font.SourceSansBold
 title.Parent = frame
 
-local speedButton = Instance.new("TextButton")
-speedButton.Size = UDim2.new(0.8, 0, 0, 35)
-speedButton.Position = UDim2.new(0.1, 0, 0.3, 0)
-speedButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-speedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-speedButton.Text = "Set Speed: 100"
-speedButton.TextSize = 14
-speedButton.Font = Enum.Font.SourceSansBold
-speedButton.Parent = frame
+-- Command Bar / TextBox input
+local textBox = Instance.new("TextBox")
+textBox.Size = UDim2.new(0.9, 0, 0, 35)
+textBox.Position = UDim2.new(0.05, 0, 0.15, 0)
+textBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+textBox.PlaceholderText = "Type (.fly, .speed 50, .jump 100...)"
+textBox.Text = ""
+textBox.TextSize = 12
+textBox.Font = Enum.Font.SourceSans
+textBox.ClearTextOnFocus = false
+textBox.Parent = frame
 
-speedButton.MouseButton1Click:Connect(function()
-    local character = player.Character
-    if character and character:FindFirstChild("Humanoid") then
-        character.Humanoid.WalkSpeed = 100
+-- States variables
+local flying = false
+local noclip = false
+local flySpeed = 50
+local bg, bv
+
+-- Fly function logic
+local function toggleFly()
+    flying = not flying
+    local char = localPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    
+    if flying then
+        bg = Instance.new("BodyGyro")
+        bg.P = 9e4
+        bg.maxTorque = Vector3.new(9e4, 9e4, 9e4)
+        bg.cframe = char.HumanoidRootPart.CFrame
+        bg.Parent = char.HumanoidRootPart
+        
+        bv = Instance.new("BodyVelocity")
+        bv.velocity = Vector3.new(0, 0, 0)
+        bv.maxForce = Vector3.new(9e4, 9e4, 9e4)
+        bv.Parent = char.HumanoidRootPart
+        
+        task.spawn(function()
+            while flying and char and char:FindFirstChild("HumanoidRootPart") do
+                local cam = workspace.CurrentCamera
+                local dir = Vector3.new(0,0,0)
+                if userInputService:IsKeyDown(Enum.KeyCode.W) then dir = dir + cam.CFrame.LookVector end
+                if userInputService:IsKeyDown(Enum.KeyCode.S) then dir = dir - cam.CFrame.LookVector end
+                if userInputService:IsKeyDown(Enum.KeyCode.A) then dir = dir - cam.CFrame.RightVector end
+                if userInputService:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.CFrame.RightVector end
+                bv.velocity = dir * flySpeed
+                bg.cframe = cam.CFrame
+                task.wait()
+            end
+        end)
+    else
+        if bg then bg:Destroy() end
+        if bv then bv:Destroy() end
+    end
+end
+
+-- Noclip loop
+runService.Stepped:Connect(function()
+    if noclip and localPlayer.Character then
+        for _, part in pairs(localPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
     end
 end)
 
-local resetButton = Instance.new("TextButton")
-resetButton.Size = UDim2.new(0.8, 0, 0, 35)
-resetButton.Position = UDim2.new(0.1, 0, 0.65, 0)
-resetButton.BackgroundColor3 = Color3.fromRGB(255, 85, 85)
-resetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-resetButton.Text = "Reset Speed (16)"
-resetButton.TextSize = 14
-resetButton.Font = Enum.Font.SourceSansBold
-resetButton.Parent = frame
+-- Command Processing Engine
+local function processCommand(msg)
+    if string.sub(msg, 1, 1) == "." then
+        local fullCmd = string.lower(string.sub(msg, 2))
+        local args = {}
+        for arg in string.gmatch(fullCmd, "%S+") do
+            table.insert(args, arg)
+        end
+        
+        local cmd = args[1]
+        local val = tonumber(args[2])
+        local targetName = args[2]
 
-resetButton.MouseButton1Click:Connect(function()
-    local character = player.Character
-    if character and character:FindFirstChild("Humanoid") then
-        character.Humanoid.WalkSpeed = 16
+        if cmd == "fly" then
+            toggleFly()
+        elseif cmd == "unfly" then
+            if flying then toggleFly() end
+        elseif cmd == "noclip" then
+            noclip = true
+        elseif cmd == "unnoclip" then
+            noclip = false
+        elseif cmd == "speed" and val then
+            if localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then
+                localPlayer.Character.Humanoid.WalkSpeed = val
+            end
+        elseif cmd == "jump" and val then
+            if localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then
+                localPlayer.Character.Humanoid.JumpPower = val
+            end
+        elseif cmd == "tp" and targetName then
+            for _, p in pairs(players:GetPlayers()) do
+                if string.sub(string.lower(p.Name), 1, string.len(targetName)) == string.lower(targetName) then
+                    if p.Character and p.Character:FindFirstChild("HumanoidRootPart") and localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        localPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Text box enter key listener
+textBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        processCommand(textBox.Text)
+        textBox.Text = ""
+    end
+end)
+
+-- In-game chat listener with '.' prefix
+localPlayer.Chatted:Connect(function(msg)
+    processCommand(msg)
+end)
+
+-- Helper function for UI buttons
+local function createButton(name, posY, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.9, 0, 0, 30)
+    btn.Position = UDim2.new(0.05, 0, posY, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Text = name
+    btn.TextSize = 12
+    btn.Font = Enum.Font.SourceSansBold
+    btn.Parent = frame
+    btn.MouseButton1Click:Connect(callback)
+end
+
+-- Quick UI Buttons
+createButton("Toggle Fly", 0.32, function() toggleFly() end)
+createButton("Toggle Noclip", 0.45, function() noclip = not noclip end)
+createButton("Set Speed 50 (.speed 50)", 0.58, function() 
+    if localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then
+        localPlayer.Character.Humanoid.WalkSpeed = 50
+    end
+end)
+createButton("Reset Speed 16 (.speed 16)", 0.71, function() 
+    if localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then
+        localPlayer.Character.Humanoid.WalkSpeed = 16
     end
 end)
