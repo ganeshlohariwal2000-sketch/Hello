@@ -1,0 +1,62 @@
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+if playerGui:FindFirstChild("SimpleScriptMenu") then
+    playerGui.SimpleScriptMenu:Destroy()
+end
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SimpleScriptMenu"
+screenGui.Parent = playerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 150)
+frame.Position = UDim2.new(0.1, 0, 0.1, 0)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Text = "Simple Control Menu"
+title.TextSize = 14
+title.Font = Enum.Font.SourceSansBold
+title.Parent = frame
+
+local speedButton = Instance.new("TextButton")
+speedButton.Size = UDim2.new(0.8, 0, 0, 35)
+speedButton.Position = UDim2.new(0.1, 0, 0.3, 0)
+speedButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+speedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedButton.Text = "Set Speed: 100"
+speedButton.TextSize = 14
+speedButton.Font = Enum.Font.SourceSansBold
+speedButton.Parent = frame
+
+speedButton.MouseButton1Click:Connect(function()
+    local character = player.Character
+    if character and character:FindFirstChild("Humanoid") then
+        character.Humanoid.WalkSpeed = 100
+    end
+end)
+
+local resetButton = Instance.new("TextButton")
+resetButton.Size = UDim2.new(0.8, 0, 0, 35)
+resetButton.Position = UDim2.new(0.1, 0, 0.65, 0)
+resetButton.BackgroundColor3 = Color3.fromRGB(255, 85, 85)
+resetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+resetButton.Text = "Reset Speed (16)"
+resetButton.TextSize = 14
+resetButton.Font = Enum.Font.SourceSansBold
+resetButton.Parent = frame
+
+resetButton.MouseButton1Click:Connect(function()
+    local character = player.Character
+    if character and character:FindFirstChild("Humanoid") then
+        character.Humanoid.WalkSpeed = 16
+    end
+end)
